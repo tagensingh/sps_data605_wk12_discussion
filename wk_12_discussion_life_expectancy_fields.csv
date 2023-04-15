@@ -1,0 +1,22 @@
+Field,Description,Used in Regreesion,Notes
+Country,Country of study,No,Excluded this field from the regression since the country is an geographic datapoint that would not contribute to the neede regression discussion
+Region,Geographic region of study,No,Excluded this field from the regression since the region is an geographic datapoint that would not contribute to the needed regression discussion
+Year,Data year,No,Excluded this field from the regression since the year is an time specific datapoint that would not contribute to the needed regression discussion
+Life_expectancy,Predicted Field,Yes,This is the PREDICTED field based on the predictor fields
+Infant_deaths,No of infants deaths per capita,Yes,This field measures the number of infants deaths per capita cintributes to the overall life expectancy of the country
+Under_five_deaths,No of infants under 5 deaths per capita,No,"Excluded this field from the regression since I was not certain of it's participation in the infants_deaths field, it could present a collinearity issue."
+Adult_mortality,Adult mortality per capita,Yes,It is an obvious contribution to the regressio study
+Alcohol_consumption,Alcohol consumption per acpita,Yes,It is an obvious contribution to the regressio study
+Hepatitis_B,Deaths from Hepatitis B per capita,Yes,It is an obvious contribution to the regressio study
+Measles,Deaths from Maeasles B per capita,Yes,It is an obvious contribution to the regressio study
+BMI,Population average BMI,Yes,It is an obvious contribution to the regressio study
+Polio,Deaths from Polio B per capita,Yes,It is an obvious contribution to the regressio study
+Diphtheria,Deaths from Diphtheria per capita,Yes,It is an obvious contribution to the regressio study
+Incidents_HIV,Deaths from HIV Incidents per capita,Yes,It is an obvious contribution to the regressio study
+GDP_per_capita,GDP per capita,Yes,"A country's economic will always be a major contributor to it's citizens life expectancy, however it is also a fator in how the effectiveness of population disease management, this can present a colliearity issue when we condier the relationship to the disease fileds studied"
+Population_mln,Population,No,"While population size is a significant topic of discussion in itself, it is not included in this analysis since I thoght that GDP_per_capita is a more appropiate inclusion"
+Thinness_ten_nineteen_years,Thiness 10 to 19 years,No,"This may be a field to include in another analysis about fitness, life expectancy in younger age groups but I did not think I would add anything meaningful to the regression equation since it would require additional study of the underlying data"
+Thinness_five_nine_years,Thiness 5 to 9 years,No,"This may be a field to include in another analysis about fitness, life expectancy in younger age groups but I did not think I would add anything meaningful to the regression equation since it would require additional study of the underlying data"
+Schooling,Schooling per capita,Yes,"While this datapoint is critical in the study of population mortality rates, it is not included here as is is a component of the calculated Quadratic filed used in this analysis"
+Economy_status_Developed,Developed country,Yes,This field is included as part of the Dichothomous Variable
+Economy_status_Developing,Devloping country,Yes,This field is included as part of the Dichothomous vs Quadratic Variable
