@@ -1,0 +1,429 @@
+---
+title: "Data 605 Discussion 12"
+author: "Tage N Singh"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+--------------------------------------------------------------------------------
+
+File Locations:
+
+<a href="http://testing.test123.org/xx3/landing.gsp">R Pubs Output</a>
+
+<a href="http://testing.test123.org/xx3/landing.gsp">RMD on Github</a>
+
+--------------------------------------------------------------------------------
+
+```{r setup, include=FALSE}
+
+
+library(car)
+library(ggplot2)
+library(mctest)
+library(patchwork)
+library(MASS)
+library(dplyr)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+Assignment Details : 
+
+Using R, build a multiple regression model for data that interests you.  Include in this model at least one quadratic term, one dichotomous term, and one dichotomous vs. quantitative interaction term.  Interpret all coefficients. Conduct residual analysis.  Was the linear model appropriate? Why or why not?
+
+----------------------------------------------------------------------
+
+
+
+**-----  Importing provided dataset  -----**
+
+
+This dataset was sources from https://www.kaggle.com/. The data contains life expectancy, health, immunization, and economic and demographic information about 179 countries from 2000-2015 years. The adjusted dataset has 21 variables and 2.864 rows. It was last updated in April 2023.
+
+
+```{r}
+
+life_exp_url <- 'https://raw.githubusercontent.com/tagensingh/sps_data605_wk12_discussion/main/wk_12_discussion_life_expectancy.csv'
+
+life_exp_raw <- read.csv(life_exp_url, header=TRUE)
+
+```
+<br>
+
+--------------------------------------------------------------------------------
+
+<br>
+
+The following is a summary of the dataset gathered from provided dataset
+
+```{r}
+summary(life_exp_raw)
+
+```
+<br>
+
+
+
+The following is the header information of the dataset.
+
+```{r}
+head(life_exp_raw)
+
+```
+
+```{r}
+sort(colnames(life_exp_raw))
+
+#The dimension of the dataset :
+
+dim(life_exp_raw)
+
+#Checking for Null Values 
+
+life_exp_raw[!complete.cases(life_exp_raw),]
+
+```
+<br>
+
+
+--------------------------------------------------------------------------------
+
+
+
+**Selecting the Columns for Regression Analysis**
+
+```{r regression_data}
+
+life_exp <- select(life_exp_raw,Life_expectancy,Adult_mortality,Hepatitis_B,Measles,Polio,Diphtheria,Incidents_HIV,GDP_per_capita,BMI,Infant_deaths)
+
+
+```
+
+
+Creating the Quadratic Variable :
+
+```{r}
+
+life_exp$le_quad <- (life_exp_raw$Schooling)^2
+
+summary(life_exp$le_quad)
+
+```
+
+Creating the Dichotomous Variable :
+
+```{r}
+life_exp$le_dichotomous <- life_exp_raw$Alcohol_consumption * life_exp_raw$Economy_status_Developed
+
+summary(life_exp$le_dichotomous)
+
+```
+
+Creating the Dichotomous vs Quadratic Variable :
+
+```{r}
+life_exp$le_dich_quad <- life_exp$le_quad * life_exp_raw$Economy_status_Developing* life_exp_raw$Alcohol_consumption
+
+summary(life_exp$le_dich_quad)
+
+```
+<br>
+
+
+--------------------------------------------------------------------------------
+
+
+
+Generating the initial Regression Model - 1 Predicted Variable - 12 Predictor Variables :
+
+```{r}
+
+life_exp_0.lm <- lm(Life_expectancy ~ Adult_mortality + Hepatitis_B + Measles + Polio + Diphtheria + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data=life_exp)
+
+```
+
+
+The Regression Details
+
+```{r EX1_3}
+
+summary(life_exp_0.lm)
+
+```
+
+**Initial Regression summary Discussion :**
+
+Residuals :
+
+The median is very close to zero(0) with 1Q and 3Q almost perfectly balanced, The Min and Max and about even with a very slight right tail. This indicates that the residual distribution is close to "Normal".
+
+Since the Multiple R-squared of 0.9771 and Adjusted R-squared of 0.977 is very close to 1, this indicates that the model is a good fit to the data.
+
+However we will investigate the coefficients to rule out instances of Multicollinearity
+
+
+
+**Testing for and Freeing From  Multicollinearity among Variables**
+
+Multicollinearity  occurs when two or more predictor variables are highly correlated to each other, such that they do not provide unique or independent information in the regression model.
+
+If the degree of correlation is high enough between variables, it can cause problems when fitting and interpreting the regression model.
+
+To test this model for Multicollinearity we will employ the "imcdiag" function from the "mctest" library and examine the 
+Variance Inflation Factor (VIF) score.
+
+Note : Scores over 5 are moderately multicollinear. Scores over 10 are very problematic
+
+using the VIF measure we see that 7 of the predictor variables posses low VIF scores indicating that they are not very correlated, but the following variables are moderately to problematic :
+
+
+Adult_mortality - VIF score is 7.7 ---- Moderately multicollinear
+
+Infant_deaths - VIF score is 7.8 ---- Moderately multicollinear
+
+
+
+Polio- VIF score is 12.0 ---- Problematic ---- Will be removed from the model$
+
+Diphtheria - VIF score is 12.8 ---- Problematic ---- Will be removed from the model
+
+
+```{r collinear_test_1}
+
+imcdiag(life_exp_0.lm)
+
+```
+<br>
+
+
+--------------------------------------------------------------------------------
+
+
+
+**Adjusting Model by removing both Problematic Variables**
+
+```{r model_1_0}
+
+# Removed both Polio and Diphtheria variables
+
+life_exp_1.lm <- lm(Life_expectancy ~ Adult_mortality + Hepatitis_B + Measles + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data=life_exp)
+
+```
+
+
+
+The Regression Details of the Adjusted Model :
+
+```{r}
+summary(life_exp_1.lm)
+
+```
+
+The Multicollinearity test results for the Adjusted Model :
+
+```{r collinear_test_2}
+
+imcdiag(life_exp_1.lm)
+
+```
+
+**Discussion of Adjusted model and Multicollinearity tests :**
+
+Residuals :
+
+The median is now zero(0) with 1Q and 3Q almost perfectly balanced, The Min and Max and about even with a very slight right tail. This indicates that the residual distribution is close to "Normal".
+
+Since the Multiple R-squared of 0.9771 and Adjusted R-squared of 0.977 is very close to 1, this indicates that the model is a good fit to the data.
+
+there was some changes to the VIF scores of the following variables
+
+Adult_mortality - VIF score remain at 7.7 ---- Moderately multicollinear
+
+Infant_deaths - VIF score is 6.4 - down from 7.8 ---- Moderately multicollinear
+
+Overall this Adjusted model is a better fit since we removed the severely multicollinear variables.
+
+
+Note - the computed variables le_quad, le_dichotomous and le_dich_quad low to moderately multicollinear.
+
+
+when we examine a Histogram of the residuals of the regression we see that it is approximately normally distributed.
+
+<br>
+
+--------------------------------------------------------------------------------
+
+
+
+Reviewing the model by removing only one Problematic Variable alternatively.
+
+Note that when the "polio" variable was removed from the linear model, the VIF score for the "Diphtheria" variable vastly improved from 12.8 to 3.8
+
+AND
+
+when the "diphtheria" variable was removed from the linear model, the VIF score for the "polio" variable vastly improved from 12.0 to 3.6
+
+MODEL Improvement - Remove ONLY the "Diphtheria" variable from the original model
+
+```{r model_1_1}
+
+# Removed  Polio variables
+
+life_exp_1_1.lm <- lm(Life_expectancy ~ Adult_mortality + Hepatitis_B + Measles +Diphtheria + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data=life_exp)
+
+summary(life_exp_1_1.lm)
+
+imcdiag(life_exp_1_1.lm)
+
+```
+
+
+
+```{r model_1_2}
+
+# Removed Diphtheria variable
+
+life_exp_1_2.lm <- lm(Life_expectancy ~ Adult_mortality + Hepatitis_B + Measles + Polio + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data=life_exp)
+
+summary(life_exp_1_2.lm)
+
+imcdiag(life_exp_1_2.lm)
+
+```
+
+<br>
+
+--------------------------------------------------------------------------------
+
+**The New Adjusted model is as follows ---**
+**11 Predictor Variables + 1 Predicted Variable**
+
+```{r adjusted_2}
+
+life_exp_1_2.lm <- lm(Life_expectancy ~ Adult_mortality + Hepatitis_B + Measles + Polio + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data=life_exp)
+
+summary(life_exp_1_2.lm)
+
+imcdiag(life_exp_1_2.lm)
+
+```
+
+Final Adjusted model discussion :
+
+The overall model does not significantly change 
+
+The Adjusted $R^2$ remains relatively high at > 97% even after removing the "Diphtheria" variable.
+
+The P- Value for the individual coefficients are relatively low except for the "Measles" variable.
+
+
+<br>
+
+--------------------------------------------------------------------------------
+
+Let us try the stepAIC function on our model.
+
+Using the initial model with all initial variables
+
+
+```{r}
+
+life_exp_0.lm <- lm(Life_expectancy ~ Adult_mortality + Hepatitis_B + Measles + Polio + Diphtheria + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data=life_exp)
+
+
+stepAIC(life_exp_0.lm, direction="both")
+
+```
+
+Applying the recommended stepAIC model - lowest AIC score of 2042.42
+
+Note that this model excludes the "polio" variable 
+
+The Adjusted $R^2$ remains the same and the overall model fit is about the same as the model suggested by using the VIF scores.
+
+```{r stepAIC_model}
+
+life_exp_aic.lm <- lm(formula = Life_expectancy ~ Adult_mortality + Hepatitis_B + Diphtheria + Incidents_HIV + GDP_per_capita + le_quad + le_dichotomous + le_dich_quad + BMI + Infant_deaths, data = life_exp)
+
+
+summary(life_exp_aic.lm)
+
+
+```
+
+
+
+<br>
+
+--------------------------------------------------------------------------------
+
+**Residuals discussion**
+
+
+The histogram of the residuals shows an almost perfect normal distribution with mean = 0
+
+
+In the QQ lot, data that aligns closely to the red line indicates a normal distribution. If the points skew drastically from the line, you could consider adjusting your model by adding or removing other variables in the regression model, this model is the result of that model adjustment.
+
+
+```{r}
+hist(life_exp_aic.lm$residuals, prob = TRUE)
+abline(v = mean(life_exp_aic.lm$residuals),                       # Add line for mean
+       col = "red",
+       lwd = 3)
+lines(density(life_exp_aic.lm$residuals),col = "green")
+
+
+```
+
+
+
+```{r}
+qqnorm(life_exp_aic.lm$residuals)
+qqline(life_exp_aic.lm$residuals, col = "red")
+
+```
+
+The fitted and residual values seem to have a linear relationship, there is some evidence of heteroskedastic behavior 
+
+```{r}
+
+plot(life_exp_aic.lm$fitted.values, life_exp_aic.lm$residuals, 
+     xlab="Fitted Values", ylab="Residuals",
+     main="Residuals Plot",col = "greenyellow")
+abline(h=0)
+
+```
+
+
+--------------------------------------------------------------------------------
+
+**The proposed model fits the data and is a credible predictor(appropiate) of Life expectancy**
+
+
+**All models tested would yield good predictions of the data but the stepAIC model is preferred**
+
+--------------------------------------------------------------------------------
+
+
+<br>
+
+
+References :
+
+https://www.kaggle.com/datasets/lashagoch/life-expectancy-who-updated
+
+https://www.statology.org/multicollinearity-in-r
+
+https://datascienceplus.com/multicollinearity-in-r
+
+https://rforpoliticalscience.com/2020/11/12/interpret-multicollinearity-tests-from-the-mctest-package-in-r
+
+
+
+
+
+
